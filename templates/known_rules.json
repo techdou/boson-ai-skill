@@ -1,0 +1,28 @@
+{
+  "_doc": "Local snapshot of Boson AI official API rules. Diff baseline for check_official_docs.py. Update when official docs change.",
+  "source_urls": {
+    "llms_txt": "https://docs.boson.ai/llms.txt",
+    "openapi_json": "https://docs.boson.ai/openapi.json",
+    "voices_md": "https://docs.boson.ai/models/higgs-tts/voices.md",
+    "tags_md": "https://docs.boson.ai/models/higgs-tts/tags.md",
+    "languages_md": "https://docs.boson.ai/models/higgs-tts/languages.md"
+  },
+  "tts": {
+    "models": ["higgs-tts-3"],
+    "preset_voices": ["chloe", "eleanor", "jake", "marcus", "nora", "oliver"],
+    "default_voice_id": "default",
+    "formats": ["mp3", "wav", "pcm", "opus", "aac", "flac"],
+    "max_input_chars": 5000,
+    "ref_audio_formats": ["AAC", "WAV", "MP3", "FLAC", "OPUS"],
+    "ref_audio_max_bytes": 10485760
+  },
+  "avatar": {
+    "models": ["higgs-avatar"],
+    "sizes": ["640x640", "640x480", "480x640"],
+    "ref_image_formats": ["PNG", "JPEG", "WEBP"],
+    "ref_image_max_bytes": 10485760,
+    "input_audio_max_seconds": 60,
+    "input_audio_formats": ["AAC", "WAV", "MP3", "FLAC", "OPUS"]
+  },
+  "snapshot_date": "2026-07-15"
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "text": "<|emotion:enthusiasm|>Welcome to today's lesson! <|sfx:laughter|>Haha, I'm excited to get started.",
+    "voice": "chloe",
+    "title": "intro"
+  },
+  {
+    "text": "Let me walk you through the core concepts, one step at a time. <|prosody:pause|> First, let's define what we mean by machine learning.",
+    "voice": "eleanor",
+    "title": "concept_definition"
+  },
+  {
+    "text": "<|prosody:speed_slow|>Think of it like teaching a child to recognize animals. <|prosody:pause|> You show enough examples, and eventually they learn the pattern.",
+    "voice": "oliver",
+    "title": "analogy"
+  },
+  {
+    "text": "<|emotion:contentment|>And that's the beauty of it — once you grasp the intuition, the math becomes much more approachable.",
+    "voice": "nora",
+    "title": "conclusion"
+  }
+]

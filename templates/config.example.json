@@ -1,0 +1,30 @@
+{
+  "api_key_env": "BOSON_API_KEY",
+  "base_url_env": "BOSON_BASE_URL",
+  "default_base_url": "https://api.boson.ai",
+  "default_tts_model": "higgs-tts-3",
+  "default_avatar_model": "higgs-avatar",
+  "default_voice": "default",
+  "default_tts_format": "mp3",
+  "default_video_size": "640x640",
+  "default_tts_output_dir": "output/audio",
+  "default_tts_manifest": "output/audio_manifest.json",
+  "default_video_output_dir": "output/video",
+  "timeout": 120,
+  "retries": 2,
+  "sleep_between": 0.0,
+  "video_poll_interval": 2.0,
+  "video_max_wait": 300.0,
+  "doc_check_enabled": true,
+  "doc_check_ttl_hours": 24,
+  "doc_check_cache_dir": "output/.doc_cache",
+  "known_rules_path": "templates/known_rules.json",
+  "official_doc_urls": {
+    "llms_txt": "https://docs.boson.ai/llms.txt",
+    "openapi": "https://docs.boson.ai/openapi.json",
+    "tts_voices": "https://docs.boson.ai/models/higgs-tts/voices",
+    "tts_tags": "https://docs.boson.ai/models/higgs-tts/tags",
+    "tts_languages": "https://docs.boson.ai/models/higgs-tts/languages",
+    "avatar_overview": "https://docs.boson.ai/models/higgs-avatar/overview"
+  }
+}
