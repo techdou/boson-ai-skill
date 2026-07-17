@@ -42,8 +42,29 @@ from boson_common import (  # noqa: E402
 )
 
 # Known Boson server-side bug (public preview): text-to-video (input_tts) fails
-# with an ascii encoding error. When detected, we auto-fallback to TTS→audio→video.
-_T2V_BUG_SIGNATURE = "codec can't encode"
+# with an encoding error. The exact wording may change between server versions,
+# so we match any of a small set of substrings rather than one fixed string.
+# Use is_t2v_server_bug() to keep this check in one place.
+_T2V_BUG_SIGNATURES = (
+    "codec can't encode",   # observed 2026-07: 'ascii' codec can't encode character
+    "unicodedecodeerror",
+    "encoding error",
+    "input_tts",            # last-resort: any error mentioning the t2v field itself
+)
+
+
+def is_t2v_server_bug(error_text: str) -> bool:
+    """True if the video error looks like the known text-to-video server bug.
+
+    Matched loosely (case-insensitive) so small wording changes on the server
+    side still trigger the fallback. This is intentionally permissive: a false
+    positive just costs one extra TTS+audio-to-video roundtrip, while a false
+    negative would surface an opaque server error to the user.
+    """
+    if not error_text:
+        return False
+    lower = error_text.lower()
+    return any(sig.lower() in lower for sig in _T2V_BUG_SIGNATURES)
 
 
 def _resolve_ref_image(ref_image_arg: str) -> str:
@@ -159,7 +180,7 @@ def run_async(args: argparse.Namespace, config: dict, client: BosonClient) -> in
         try:
             video = client.wait_for_video(video_id, poll_interval=poll_interval, max_wait=max_wait)
         except RuntimeError as exc:
-            if _T2V_BUG_SIGNATURE in str(exc):
+            if is_t2v_server_bug(str(exc)):
                 # Known server bug — auto-fallback to TTS→audio→video
                 return _do_tts_then_video(client, ref_image=ref_image, model=model, size=size,
                                            tts_body=input_tts, poll_interval=poll_interval,

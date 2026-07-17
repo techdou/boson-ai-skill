@@ -198,6 +198,14 @@ python scripts/check_official_docs.py
 python scripts/check_official_docs.py --force-refresh
 ```
 
+## Tests
+
+Pure-unit tests for path resolution, data-URI encoding, retry behavior, doc cache, and the text-to-video fallback signature matcher. No network calls.
+
+```bash
+python -m unittest discover -s tests -v
+```
+
 ## Languages
 
 Higgs TTS 3 auto-detects language from input text — **no language parameter needed**. Supports 102 languages including Chinese, English, Japanese, Korean, French, German, Spanish, Arabic, Hindi, Vietnamese, Thai, and more. For accents, use a reference clip with the target accent.
