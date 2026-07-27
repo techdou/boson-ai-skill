@@ -32,6 +32,7 @@ from boson_common import (  # noqa: E402
     BosonClient,
     DocCache,
     PROJECT_ROOT,
+    cleanup_intermediates,
     file_to_data_uri,
     load_config,
     resolve_api_key,
@@ -263,12 +264,19 @@ def main() -> int:
     client = BosonClient(api_key or "dry-run-key", base_url, timeout=args.timeout)
 
     if args.segments:
-        return run_batch(args, config, client)
+        rc = run_batch(args, config, client)
     elif args.text:
-        return run_single(args, config, client)
+        rc = run_single(args, config, client)
     else:
         print("[ERROR] provide --text (single) or --segments (batch)", file=sys.stderr)
         return 1
+
+    # 中间产物清理(仅成功后;失败保留便于 debug)
+    if rc == 0 and not args.dry_run:
+        removed = cleanup_intermediates(command="tts")
+        if removed:
+            print(f"[INFO] Cleaned intermediate files: {', '.join(removed)}", file=sys.stderr)
+    return rc
 
 
 if __name__ == "__main__":

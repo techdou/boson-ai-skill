@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from boson_common import (  # noqa: E402
     BosonClient,
     PROJECT_ROOT,
+    cleanup_intermediates,
     file_to_data_uri,
     load_config,
     resolve_api_key,
@@ -311,9 +312,17 @@ def main() -> int:
     client = BosonClient(api_key or "dry-run-key", base_url, timeout=args.timeout)
 
     if args.stream:
-        return run_stream(args, config, client)
+        rc = run_stream(args, config, client)
     else:
-        return run_async(args, config, client)
+        rc = run_async(args, config, client)
+
+    # 中间产物清理(仅成功后;失败保留便于 debug)
+    # 主要兜底: avatar_video fallback 路径崩溃时 _tts_temp/ 可能残留
+    if rc == 0 and not args.dry_run:
+        removed = cleanup_intermediates(command="avatar_video")
+        if removed:
+            print(f"[INFO] Cleaned intermediate files: {', '.join(removed)}", file=sys.stderr)
+    return rc
 
 
 if __name__ == "__main__":

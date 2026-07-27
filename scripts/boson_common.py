@@ -21,6 +21,17 @@ except ImportError:
         "This skill requires the 'requests' library. Install it with: pip install requests"
     )
 
+# ── .env fallback: load skill-local .env so the key survives PC switches ──
+# shell-exported vars still win (override=False); dotenv missing → silent skip.
+try:
+    from dotenv import load_dotenv as _load_dotenv
+    _skill_root = Path(__file__).resolve().parent.parent
+    _env_path = _skill_root / ".env"
+    if _env_path.is_file():
+        _load_dotenv(_env_path, override=False)
+except ImportError:
+    pass
+
 DEFAULT_BASE_URL = "https://api.boson.ai"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = Path.cwd()  # User's current working directory — outputs land here
@@ -323,3 +334,73 @@ def fetch_text(url: str, timeout: int = 30) -> str:
     resp = requests.get(url, timeout=timeout, headers={"User-Agent": "boson-skill-selfcheck/1.0"})
     resp.raise_for_status()
     return resp.text
+
+
+
+def _clean_enabled() -> bool:
+    """Read BOSON_CLEAN_INTERMEDIATES env var as a boolean."""
+    raw = os.getenv("BOSON_CLEAN_INTERMEDIATES", "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+
+def cleanup_intermediates(command: str = "", output_root: str | Path | None = None) -> list[str]:
+    """Remove non-final intermediate files from a boson command output directory.
+
+    Triggered by env var BOSON_CLEAN_INTERMEDIATES=1/true/yes/on.
+
+    `command` is one of: "tts", "avatar_video", "voice_manager", or "" (auto).
+    Different commands have different final deliverables, so the cleanup is
+    scoped to incontestable intermediate directories only.
+
+    Deletes (豆哥确认的中间产物,所有命令安全):
+      - output/video/_tts_temp/   (avatar_video fallback 中崩溃残留的 TTS 音频;
+                                   正常流程已自删, 这里只兜底崩溃场景)
+      - output/.doc_cache/        (官方文档自检缓存, 24h TTL, 删了下一次重抓)
+
+    Preserves (豆哥明确要保留):
+      - output/audio/*.mp3, *.wav, *.opus, *.aac, *.flac   (tts 最终交付)
+      - output/audio_manifest.json                          (含失败段索引, 可能要重跑)
+      - output/video/*.mp4                                   (avatar_video 最终交付)
+      - output/segments.json                                 (用户输入文件, 严禁删)
+      - boson_config.json                                    (用户配置)
+
+    Returns the list of removed relative paths for logging.
+    Best-effort: OSError on individual files is swallowed.
+    Never raises — cleanup failure does not block the main task.
+    """
+    if not _clean_enabled():
+        return []
+
+    if output_root is None:
+        output_root = resolve_output_dir("output")
+    root = Path(output_root)
+    if not root.is_dir():
+        return []
+
+    # 无争议中间目录(所有命令安全)
+    intermediate_dirs = [
+        root / "video" / "_tts_temp",  # avatar_video fallback 残留
+        root / ".doc_cache",           # 文档缓存
+    ]
+
+    removed: list[str] = []
+    for d in intermediate_dirs:
+        if not d.is_dir():
+            continue
+        for child in d.rglob("*"):
+            if child.is_file():
+                try:
+                    child.unlink()
+                    removed.append(str(child.relative_to(root)))
+                except OSError:
+                    pass
+        # 尝试删空目录(自底向上)
+        try:
+            for sub in sorted([p for p in d.rglob("*") if p.is_dir()], reverse=True):
+                sub.rmdir()
+            d.rmdir()
+            removed.append(str(d.relative_to(root)) + "/")
+        except OSError:
+            pass
+
+    return removed

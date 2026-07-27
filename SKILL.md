@@ -38,6 +38,18 @@ $env:BOSON_API_KEY="bai-你的key"
 
 Generated audio, video, manifests, and doc-cache are written to **the current project's `output/` directory** (i.e. `$CWD/output/`), not inside the skill package. This means each project session gets its own isolated output. Skill-internal resources (config templates, known_rules, examples) are still read from the skill directory. To override, pass an absolute path with `--output` / `--out-dir`.
 
+## Intermediate cleanup (optional)
+
+`boson_tts` and `boson_avatar_video` leave some internal state that most users do not need after a successful run: `output/video/_tts_temp/` (crash-recovered TTS audio from avatar_video fallback path) and `output/.doc_cache/` (24h-TTL self-check doc cache).
+
+Set the env var to auto-clean these after success:
+
+```bash
+export BOSON_CLEAN_INTERMEDIATES=1
+```
+
+When enabled, only the two items above are deleted. Final deliverables are always preserved: `output/audio/*.{mp3,wav,opus,aac,flac}`, `output/audio_manifest.json`, `output/video/*.mp4`, and user inputs like `output/segments.json` are never touched. Failed runs are never cleaned. To make this permanent on Windows, set it as a user environment variable.
+
 ## Core capability 1: TTS (text-to-speech)
 
 ### Single text → audio file

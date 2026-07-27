@@ -1,4 +1,27 @@
-# Boson AI Skill
+# Boson AI Skill | Boson AI 语音与数字人 Skill
+
+[English](#english) | [中文](#中文)
+
+---
+
+<a id="中文"></a>
+## 中文
+
+可移植 Agent Skill，调用 [Boson AI](https://boson.ai) 的 **Higgs TTS 3** 和 **Higgs Avatar** 模型。支持 102 种语言的语音合成、声音克隆、情感/风格控制、数字人口播视频生成，全部通过命令行完成。
+
+### 触发场景
+
+- 文本转语音（TTS）、多语言配音
+- 声音克隆、参考音频注册复用
+- 数字人/口播视频、音频转视频
+- 情感标签控制（内联 emotion tag）
+
+下方英文为完整文档。
+
+---
+
+<a id="english"></a>
+## English
 
 A [ZCode](https://zcode.ai) / Claude Code / OpenCode agent skill for [Boson AI](https://boson.ai)'s **Higgs TTS 3** and **Higgs Avatar** models. Generate speech in 102 languages, clone voices, create talking-head avatar videos — all from the command line.
 
