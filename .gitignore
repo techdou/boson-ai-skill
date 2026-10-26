@@ -50,3 +50,54 @@ htmlcov/
 # ── OS junk ────────────────────────────────────────────
 desktop.ini
 ehthumbs.db
+
+# ── 2026-10-27 统一范式补全（与 techdou 仓 .gitignore 标准对齐）──
+
+# ── 私密信息与密钥：绝不入库 ──
+*.p12
+*.pfx
+secrets*
+credentials*
+*.token
+_htpasswd
+
+
+# ── 开发软件配置目录：本地工具状态不上传 ──
+.claude/
+.claude.json
+.codex/
+.cursor/
+.gemini/
+.zcode/
+.windsurf/
+.trae/
+.roo/
+.aider*
+continue/
+.aws/
+.ssh/
+
+
+# ── 内部文档与开发状态：不入版本控制，避免泄漏 ──
+# README.md / CHANGELOG.md / SKILL.md / references/ / evals/ 是仓库正式内容，保持跟踪
+drafts/
+notes/
+private/
+internal/
+dev/
+dev-notes/
+.archive/
+.research/
+*.draft.md
+*.local.md
+*.wip.md
+DEVLOG.md
+TODO.md
+STATUS.md
+
+
+# ── Node 前端产物 ──
+node_modules/
+.next/
+.nuxt/
+*.tsbuildinfo
