@@ -22,16 +22,18 @@ Do not run the full pipeline by default. Choose the smallest script for the task
 - **Generate avatar video**: `scripts/boson_avatar_video.py` (audio-driven or text-driven)
 - **Check if local rules match official docs**: `scripts/check_official_docs.py`
 
-## Quick setup
+## Quick setup & credentials
 
-```bash
-export BOSON_API_KEY="bai-你的key"
-```
-
-Windows PowerShell:
+- **Credentials file**: store `BOSON_API_KEY` in `~/.agents/skills/boson-ai-skill/.env` (auto-loaded by scripts; never print or echo the key).
+- For temporary session overrides only:
 
 ```powershell
+# Windows PowerShell
 $env:BOSON_API_KEY="bai-你的key"
+```
+```bash
+# POSIX / Git Bash
+export BOSON_API_KEY="bai-你的key"
 ```
 
 ## Output directory policy
@@ -44,8 +46,9 @@ Generated audio, video, manifests, and doc-cache are written to **the current pr
 
 Set the env var to auto-clean these after success:
 
-```bash
-export BOSON_CLEAN_INTERMEDIATES=1
+```powershell
+$env:BOSON_CLEAN_INTERMEDIATES="1"   # Windows PowerShell
+# or POSIX: export BOSON_CLEAN_INTERMEDIATES=1
 ```
 
 When enabled, only the two items above are deleted. Final deliverables are always preserved: `output/audio/*.{mp3,wav,opus,aac,flac}`, `output/audio_manifest.json`, `output/video/*.mp4`, and user inputs like `output/segments.json` are never touched. Failed runs are never cleaned. To make this permanent on Windows, set it as a user environment variable.

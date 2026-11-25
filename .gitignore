@@ -101,3 +101,10 @@ node_modules/
 .next/
 .nuxt/
 *.tsbuildinfo
+
+# ── 2026-11-26 安全与内部文档防线补齐 ──
+!*.env.example
+.mcp.json
+*-private.md
+NOTES.md
+PLAN*.md

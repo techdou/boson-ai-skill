@@ -64,14 +64,21 @@ git clone https://github.com/techdou/boson-ai-skill.git ~/.agents/skills/boson-a
 
 ### Set API Key
 
-```bash
-export BOSON_API_KEY="bai-your-key-here"
+Store `BOSON_API_KEY` in `~/.agents/skills/boson-ai-skill/.env` (gitignored, auto-loaded by scripts):
+
+```env
+BOSON_API_KEY=bai-your-key-here
 ```
 
-Windows PowerShell:
+Or inject as a temporary session environment variable:
 
 ```powershell
+# Windows PowerShell
 $env:BOSON_API_KEY="bai-your-key-here"
+```
+```bash
+# POSIX / Git Bash
+export BOSON_API_KEY="bai-your-key-here"
 ```
 
 ### Generate Your First Speech
