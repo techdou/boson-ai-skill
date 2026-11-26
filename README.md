@@ -23,13 +23,13 @@
 <a id="english"></a>
 ## English
 
-A [ZCode](https://zcode.ai) / Claude Code / OpenCode agent skill for [Boson AI](https://boson.ai)'s **Higgs TTS 3** and **Higgs Avatar** models. Generate speech in 102 languages, clone voices, create talking-head avatar videos — all from the command line.
+A [ZCode](https://zcode.ai) / Claude Code / OpenCode agent skill for [Boson AI](https://boson.ai)'s **Higgs TTS 3.1 / 3** and **Higgs Avatar** models. Generate speech, clone voices, and create talking-head avatar videos from the command line.
 
 ## Features
 
-**Higgs TTS 3 — Text-to-Speech**
-- 102 languages with single-digit WER/CER (Chinese, English, Japanese, Korean, Thai, Vietnamese, French, German, Spanish, Arabic, Hindi, and more)
-- 6 preset voices + instant voice cloning from reference audio
+**Higgs TTS — Text-to-Speech**
+- 197 languages with `higgs-tts-3.1`; `higgs-tts-3` remains the compatibility default
+- Preset voices and instant voice cloning from reference audio
 - Inline emotion / style / sound-effect / prosody tags for fine-grained control
 - Streaming PCM for low-latency output
 - Batch synthesis from segments JSON
@@ -64,7 +64,7 @@ git clone https://github.com/techdou/boson-ai-skill.git ~/.agents/skills/boson-a
 
 ### Set API Key
 
-Store `BOSON_API_KEY` in `~/.agents/skills/boson-ai-skill/.env` (gitignored, auto-loaded by scripts):
+Store `BOSON_API_KEY` in `~/.agents/skills/boson-ai-skill/.env` (gitignored, loaded by the API scripts when `python-dotenv` is installed):
 
 ```env
 BOSON_API_KEY=bai-your-key-here
@@ -88,7 +88,7 @@ cd ~/.agents/skills/boson-ai-skill
 
 python scripts/boson_tts.py \
   --text "Hello, welcome to Boson AI." \
-  --voice chloe \
+  --model higgs-tts-3.1 --voice chloe \
   --output output/welcome.mp3
 ```
 
@@ -100,7 +100,7 @@ Audio is saved to the **current project's** `output/` directory.
 
 ```bash
 # Single text
-python scripts/boson_tts.py --text "你好世界" --voice chloe --output hello.mp3
+python scripts/boson_tts.py --text "你好世界" --model higgs-tts-3.1 --voice chloe --output hello.mp3
 
 # Batch from segments JSON
 python scripts/boson_tts.py --segments examples/segments.sample.json --out-dir output/audio
@@ -114,14 +114,7 @@ python scripts/boson_tts.py --text "Hello" --stream --output stream.wav
 
 ### Preset Voices
 
-| Voice | Style | Gender |
-|---|---|---|
-| `chloe` | Friendly, clear, engaging | Female |
-| `eleanor` | Calm, articulate, educational | Female |
-| `jake` | Energetic, dramatic, passionate | Male |
-| `marcus` | Enthusiastic, confident, professorial | Male |
-| `nora` | Calm, narrative | Female |
-| `oliver` | Thoughtful, reflective | Male |
+See [SKILL.md: Preset voices](SKILL.md#preset-voices) for current documented names and model compatibility. `chloe` requires `higgs-tts-3.1`; `louis` and `zoe` work with both models.
 
 ### Inline Tags
 
@@ -130,7 +123,7 @@ Control emotion, style, sound effects, and prosody directly in the text:
 ```bash
 python scripts/boson_tts.py \
   --text "<|emotion:enthusiasm|>Welcome! <|sfx:laughter|>Haha, let's go! <|prosody:speed_slow|>One step at a time." \
-  --voice jake --output tagged.mp3
+  --model higgs-tts-3.1 --voice jake --output tagged.mp3
 ```
 
 Full tag reference: [`docs/tts_tags.md`](docs/tts_tags.md)
@@ -152,7 +145,7 @@ python scripts/boson_voice_manager.py get --voice-id voice_abc123
 python scripts/boson_avatar_video.py --ref-image face.jpg --input speech.wav --output avatar.mp4
 
 # Text-to-video: synthesize voice + animate (auto-fallback if server bug hit)
-python scripts/boson_avatar_video.py --ref-image face.jpg --tts-text "Hello world" --tts-voice chloe --output avatar.mp4
+python scripts/boson_avatar_video.py --ref-image face.jpg --tts-text "Hello world" --tts-voice default --output avatar.mp4
 
 # Streaming
 python scripts/boson_avatar_video.py --ref-image face.jpg --tts-text "Hello" --stream --output stream.mp4
@@ -192,7 +185,7 @@ Copy `templates/config.example.json` to your project root as `boson_config.json`
 
 ```json
 {
-  "default_voice": "chloe",
+  "default_voice": "zoe",
   "default_tts_format": "mp3",
   "doc_check_enabled": true,
   "doc_check_ttl_hours": 24
@@ -227,5 +220,5 @@ MIT
 
 ## Acknowledgments
 
-- [Boson AI](https://boson.ai) for the Higgs TTS 3 and Higgs Avatar models
+- [Boson AI](https://boson.ai) for the Higgs TTS and Higgs Avatar models
 - API docs: [https://docs.boson.ai](https://docs.boson.ai)

@@ -4,12 +4,22 @@
     "llms_txt": "https://docs.boson.ai/llms.txt",
     "openapi_json": "https://docs.boson.ai/openapi.json",
     "voices_md": "https://docs.boson.ai/models/higgs-tts/voices.md",
+    "tts_overview_md": "https://docs.boson.ai/models/higgs-tts/overview.md",
     "tags_md": "https://docs.boson.ai/models/higgs-tts/tags.md",
     "languages_md": "https://docs.boson.ai/models/higgs-tts/languages.md"
   },
   "tts": {
-    "models": ["higgs-tts-3"],
-    "preset_voices": ["chloe", "eleanor", "jake", "marcus", "nora", "oliver"],
+    "models": ["higgs-tts-3.1", "higgs-tts-3"],
+    "_preset_voices_doc": "Non-exhaustive: sample voices and model-specific names on voices_md; default is an alias, not a named preset.",
+    "preset_voices": ["adam", "alex", "becky", "celine", "chloe", "erik", "jonah", "lindsey", "louis", "murdock", "ruskin", "zoe"],
+    "preset_voices_3_1_only": ["adam", "alex", "becky", "celine", "chloe", "erik", "jonah", "lindsey", "murdock", "ruskin"],
+    "previously_listed_voice_status": {
+      "eleanor": "Not confirmed in current public docs; not established as removed.",
+      "jake": "Still used as a preset in the official Higgs TTS overview; not in the Voices page sample.",
+      "marcus": "Not confirmed in current public docs; not established as removed.",
+      "nora": "Not confirmed in current public docs; not established as removed.",
+      "oliver": "Not confirmed in current public docs; not established as removed."
+    },
     "default_voice_id": "default",
     "formats": ["mp3", "wav", "pcm", "opus", "aac", "flac"],
     "max_input_chars": 5000,
@@ -24,5 +34,5 @@
     "input_audio_max_seconds": 60,
     "input_audio_formats": ["AAC", "WAV", "MP3", "FLAC", "OPUS"]
   },
-  "snapshot_date": "2026-07-15"
+  "snapshot_date": "2026-11-26"
 }

@@ -20,7 +20,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from boson_common import (  # noqa: E402
-    DEFAULT_BASE_URL,
     DEFAULT_CONFIG,
     DEFAULT_DOC_CACHE_DIR,
     DEFAULT_KNOWN_RULES,
@@ -29,8 +28,6 @@ from boson_common import (  # noqa: E402
     SKILL_ROOT,
     fetch_text,
     load_config,
-    resolve_api_key,
-    resolve_base_url,
 )
 
 CRITICAL = "CRITICAL"
@@ -40,12 +37,23 @@ _SEVERITY_ORDER = {CRITICAL: 0, WARNING: 1, INFO: 2}
 
 
 def extract_tts_rules(md_text: str) -> Dict[str, Any]:
-    """Extract preset voices from TTS voices doc."""
-    # Preset voices appear as `voice_name` in the voice table.
-    # Known stable set — avoids false positives from table headers.
-    voice_pattern = re.compile(r"`(chloe|eleanor|jake|marcus|nora|oliver|default|berlinda)`")
-    voices = sorted(set(m.group(1) for m in voice_pattern.finditer(md_text)))
-    return {"preset_voices": voices}
+    """Extract the documented sample voices and the 3.1-only names, not a full catalog."""
+    sections = re.split(r"^##[ \t]+", md_text, flags=re.MULTILINE)
+    section = next((s for s in sections[1:] if s.partition("\n")[0].strip() == "Preset voices"), "")
+    voice_id = r"[a-z][a-z0-9_-]*"
+    voices = set(re.findall(rf"<audio\b[^>]*\bsrc=[\"'][^\"']*/({voice_id})_intro\.mp3[\"']", section))
+    for line in section.splitlines():
+        names, separator, _ = line.partition(" are built into Higgs TTS 3.1")
+        if separator:
+            voices.update(re.findall(rf"`({voice_id})`", names))
+    return {"preset_voices": sorted(voices)}
+
+
+def _string_enum(prop: Any) -> List[str]:
+    values = prop.get("enum") if isinstance(prop, dict) else None
+    if isinstance(values, list) and all(isinstance(item, str) and item.strip() for item in values):
+        return values
+    return []
 
 
 def extract_openapi_rules(openapi_text: str) -> Dict[str, Any]:
@@ -53,27 +61,13 @@ def extract_openapi_rules(openapi_text: str) -> Dict[str, Any]:
     data = json.loads(openapi_text)
     schemas = data.get("components", {}).get("schemas", {})
 
-    # TTS model enum
-    speech_schema = schemas.get("CreateSpeechRequest", {})
-    model_prop = speech_schema.get("properties", {}).get("model", {})
-    tts_models = model_prop.get("enum", ["higgs-tts-3"]) if isinstance(model_prop, dict) else ["higgs-tts-3"]
-
-    # Response format enum
-    fmt_prop = speech_schema.get("properties", {}).get("response_format", {})
-    formats = fmt_prop.get("enum", []) if isinstance(fmt_prop, dict) else []
-
-    # Video model enum + sizes
-    video_schema = schemas.get("CreateVideoRequest", {})
-    video_model_prop = video_schema.get("properties", {}).get("model", {})
-    avatar_models = video_model_prop.get("enum", ["higgs-avatar"]) if isinstance(video_model_prop, dict) else ["higgs-avatar"]
-    size_prop = video_schema.get("properties", {}).get("size", {})
-    sizes = size_prop.get("enum", []) if isinstance(size_prop, dict) else []
-
+    speech = schemas.get("CreateSpeechRequest", {}).get("properties", {})
+    video = schemas.get("CreateVideoRequest", {}).get("properties", {})
     return {
-        "tts_models": tts_models,
-        "tts_formats": formats,
-        "avatar_models": avatar_models,
-        "video_sizes": sizes,
+        "tts_models": _string_enum(speech.get("model")),
+        "tts_formats": _string_enum(speech.get("response_format")),
+        "avatar_models": _string_enum(video.get("model")),
+        "video_sizes": _string_enum(video.get("size")),
     }
 
 
@@ -82,11 +76,18 @@ def _diff_lists(name: str, local: list, remote: list, section: str) -> List[Dict
     local_set, remote_set = set(local), set(remote)
     for item in sorted(local_set - remote_set):
         issues.append({"severity": WARNING, "section": section,
-                        "message": f"{name} '{item}' in local rules but NOT in official docs. May be removed/renamed."})
+                        "message": f"{name} '{item}' in local rules but NOT in the checked source. Verify upstream before removing."})
     for item in sorted(remote_set - local_set):
         issues.append({"severity": INFO, "section": section,
                         "message": f"{name} '{item}' in official docs but not in local rules. Consider adding."})
     return issues
+
+
+def _diff_enum(name: str, local: list, remote: list, section: str) -> List[Dict[str, str]]:
+    if not remote:
+        return [{"severity": WARNING, "section": section,
+                 "message": f"Could not verify upstream {name} enum in openapi.json (missing, empty, or invalid)."}]
+    return _diff_lists(name, local, remote, section)
 
 
 def check_docs(known_rules: Dict[str, Any], cache: DocCache, ttl_hours: float, force_refresh: bool) -> Tuple[List[Dict[str, str]], Dict[str, Any]]:
@@ -104,19 +105,18 @@ def check_docs(known_rules: Dict[str, Any], cache: DocCache, ttl_hours: float, f
                 cache.set(openapi_url, text)
             except Exception as exc:
                 issues.append({"severity": WARNING, "section": "openapi", "message": f"Could not fetch openapi.json: {exc}"})
-                text = ""
-        if text:
+        if text is not None:
             try:
                 remote = extract_openapi_rules(text)
                 extracted.update(remote)
                 local = known_rules.get("tts", {})
-                issues += _diff_lists("TTS model", local.get("models", []), remote.get("tts_models", []), "tts")
-                issues += _diff_lists("TTS format", local.get("formats", []), remote.get("tts_formats", []), "tts")
+                issues += _diff_enum("TTS model", local.get("models", []), remote["tts_models"], "tts")
+                issues += _diff_enum("TTS format", local.get("formats", []), remote["tts_formats"], "tts")
                 local_avatar = known_rules.get("avatar", {})
-                issues += _diff_lists("Avatar model", local_avatar.get("models", []), remote.get("avatar_models", []), "avatar")
-                issues += _diff_lists("Video size", local_avatar.get("sizes", []), remote.get("video_sizes", []), "avatar")
+                issues += _diff_enum("Avatar model", local_avatar.get("models", []), remote["avatar_models"], "avatar")
+                issues += _diff_enum("Video size", local_avatar.get("sizes", []), remote["video_sizes"], "avatar")
             except Exception as exc:
-                issues.append({"severity": WARNING, "section": "openapi", "message": f"Could not parse openapi.json: {exc}"})
+                issues.append({"severity": WARNING, "section": "openapi", "message": f"Could not verify upstream enums: could not parse openapi.json ({exc})."})
 
     # Voices doc (preset voice names)
     voices_url = urls.get("voices_md")
@@ -128,12 +128,15 @@ def check_docs(known_rules: Dict[str, Any], cache: DocCache, ttl_hours: float, f
                 cache.set(voices_url, text)
             except Exception as exc:
                 issues.append({"severity": WARNING, "section": "voices", "message": f"Could not fetch voices doc: {exc}"})
-                text = ""
-        if text:
-            remote = extract_tts_rules(text)
-            extracted["preset_voices"] = remote.get("preset_voices", [])
-            local = known_rules.get("tts", {})
-            issues += _diff_lists("Preset voice", local.get("preset_voices", []), remote.get("preset_voices", []), "tts")
+        if text is not None:
+            voices = extract_tts_rules(text)["preset_voices"]
+            extracted["preset_voices"] = voices
+            if not voices:
+                issues.append({"severity": WARNING, "section": "voices",
+                               "message": "Could not verify preset voices in the official Voices doc; its structure may have changed."})
+            else:
+                local = known_rules.get("tts", {})
+                issues += _diff_lists("Preset voice", local.get("preset_voices", []), voices, "tts")
 
     return issues, extracted
 
@@ -165,8 +168,8 @@ def run_check(
 
 
 def has_blocking_issue(issues: List[Dict[str, str]], fail_on: str = WARNING) -> bool:
-    threshold = _SEVERITY_ORDER.get(fail_on, _SEVERITY_ORDER[WARNING])
-    return any(_SEVERITY_ORDER.get(i["severity"], 9) <= threshold for i in issues)
+    threshold = _SEVERITY_ORDER.get(fail_on.upper(), _SEVERITY_ORDER[WARNING])
+    return any(_SEVERITY_ORDER.get(i["severity"].upper(), 9) <= threshold for i in issues)
 
 
 def format_text(issues: List[Dict[str, str]]) -> str:
@@ -203,8 +206,7 @@ def main() -> int:
     else:
         print(format_text(issues))
 
-    fail_on = "critical" if args.fail_on == "critical" else "warning"
-    return 1 if has_blocking_issue(issues, fail_on) else 0
+    return 1 if has_blocking_issue(issues, args.fail_on) else 0
 
 
 if __name__ == "__main__":

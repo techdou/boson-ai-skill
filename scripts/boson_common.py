@@ -11,6 +11,8 @@ import hashlib
 import json
 import os
 import time
+import warnings
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -20,17 +22,6 @@ except ImportError:
     raise ImportError(
         "This skill requires the 'requests' library. Install it with: pip install requests"
     )
-
-# ── .env fallback: load skill-local .env so the key survives PC switches ──
-# shell-exported vars still win (override=False); dotenv missing → silent skip.
-try:
-    from dotenv import load_dotenv as _load_dotenv
-    _skill_root = Path(__file__).resolve().parent.parent
-    _env_path = _skill_root / ".env"
-    if _env_path.is_file():
-        _load_dotenv(_env_path, override=False)
-except ImportError:
-    pass
 
 DEFAULT_BASE_URL = "https://api.boson.ai"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
@@ -56,6 +47,24 @@ def resolve_output_dir(path: str | Path) -> Path:
 # Config
 # ---------------------------------------------------------------------------
 
+@lru_cache(maxsize=1)
+def _load_skill_env() -> None:
+    """Load skill-local settings lazily; doc-only checks don't need them."""
+    env_path = SKILL_ROOT / ".env"
+    if not env_path.is_file():
+        return
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        warnings.warn(
+            "Skill-local .env was not loaded: python-dotenv is not installed. "
+            "Install it or set BOSON_API_KEY in the shell.",
+            RuntimeWarning,
+        )
+        return
+    load_dotenv(env_path, override=False)
+
+
 def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     """Load config JSON. Priority: explicit path > CWD/config.json > skill template."""
     candidates = []
@@ -71,11 +80,13 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
 
 
 def resolve_api_key(args: Any, config: Dict[str, Any]) -> Optional[str]:
+    _load_skill_env()
     env_name = str(config.get("api_key_env", "BOSON_API_KEY"))
     return getattr(args, "api_key", None) or os.getenv(env_name) or config.get("api_key")
 
 
 def resolve_base_url(args: Any, config: Dict[str, Any]) -> str:
+    _load_skill_env()
     env_name = str(config.get("base_url_env", "BOSON_BASE_URL"))
     url = (
         getattr(args, "base_url", None)
@@ -339,6 +350,7 @@ def fetch_text(url: str, timeout: int = 30) -> str:
 
 def _clean_enabled() -> bool:
     """Read BOSON_CLEAN_INTERMEDIATES env var as a boolean."""
+    _load_skill_env()
     raw = os.getenv("BOSON_CLEAN_INTERMEDIATES", "").strip().lower()
     return raw in {"1", "true", "yes", "on"}
 

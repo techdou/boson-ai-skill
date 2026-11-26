@@ -108,3 +108,22 @@ node_modules/
 *-private.md
 NOTES.md
 PLAN*.md
+
+# ── 私密信息与 API 密钥 ──
+*.env
+!.env.example
+secrets/
+*secret*.json
+*token*.json
+*cookies*.json
+
+# ── 本地工具与构建缓存 ──
+.pi/
+*.pyc
+
+# ── 内部文档与开发状态 ──
+devlog/
+*.bak
+*.bak-*
+archive/
+state/

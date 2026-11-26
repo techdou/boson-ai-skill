@@ -1,14 +1,15 @@
 ---
 name: boson-ai-skill
 version: 1.1.0
-description: Generate speech audio and talking-head avatar videos with Boson AI (Higgs TTS 3 + Higgs Avatar). Use whenever the user wants text-to-speech in 100+ languages, voice cloning, emotion/style-controlled narration, avatar/digital-human video, or anything involving the Boson AI API — even if they don't say "Boson" explicitly. Covers preset voices (chloe/eleanor/jake/marcus/nora/oliver), inline emotion tags, reference-audio cloning, reusable voice registration, audio-to-video, text-to-video, and streaming fMP4.
+description: Generate speech audio and talking-head avatar videos with Boson AI (Higgs TTS 3.1 / 3 and Higgs Avatar). Use for multilingual text-to-speech, voice cloning, emotion/style-controlled narration, avatar/digital-human video, or the Boson AI API. Covers preset voices, inline emotion tags, reusable voice registration, audio-to-video, text-to-video, and streaming fMP4.
 ---
 
 # Boson AI Skill
 
 Use this Skill when the user wants to generate **audio** (text-to-speech, voice cloning, narration) or **video** (talking-head avatar / digital human) using the Boson AI API. The core models are:
 
-- **Higgs TTS 3** — chat-native TTS with 102 languages, instant voice cloning, inline emotion/style/sound-effect tags.
+- **Higgs TTS 3.1** (`higgs-tts-3.1`) — current model with 197 languages, instant voice cloning and inline tags. Set `--model higgs-tts-3.1` to opt in.
+- **Higgs TTS 3** (`higgs-tts-3`) — still supported on the same speech endpoint and kept as the skill's compatibility default. It does not support 3.1-only voices.
 - **Higgs Avatar** — talking-head video from a single still photo + driving audio or text.
 
 ## Progressive disclosure rule
@@ -24,7 +25,7 @@ Do not run the full pipeline by default. Choose the smallest script for the task
 
 ## Quick setup & credentials
 
-- **Credentials file**: store `BOSON_API_KEY` in `~/.agents/skills/boson-ai-skill/.env` (auto-loaded by scripts; never print or echo the key).
+- **Credentials file**: store `BOSON_API_KEY` (and optional `BOSON_BASE_URL`) in `~/.agents/skills/boson-ai-skill/.env`. API scripts load it with `python-dotenv` without overriding shell variables. If the loader is missing, set the variables in the shell instead. The public doc checker does not need credentials. Never print or echo the key.
 - For temporary session overrides only:
 
 ```powershell
@@ -60,7 +61,7 @@ When enabled, only the two items above are deleted. Final deliverables are alway
 ```bash
 python scripts/boson_tts.py \
   --text "Hello, welcome to the course." \
-  --voice chloe \
+  --model higgs-tts-3.1 --voice chloe \
   --output output/audio/welcome.mp3
 ```
 
@@ -69,6 +70,7 @@ python scripts/boson_tts.py \
 ```bash
 python scripts/boson_tts.py \
   --segments output/segments.json \
+  --model higgs-tts-3.1 \
   --out-dir output/audio \
   --manifest output/audio_manifest.json
 ```
@@ -78,7 +80,7 @@ Segments JSON format:
 ```json
 [
   {"text": "First segment text.", "voice": "chloe", "title": "intro"},
-  {"text": "Second segment text.", "voice": "oliver", "title": "body"}
+  {"text": "Second segment text.", "voice": "zoe", "title": "body"}
 ]
 ```
 
@@ -95,20 +97,18 @@ python scripts/boson_tts.py \
 ### Streaming PCM (low latency)
 
 ```bash
-python scripts/boson_tts.py --text "Hello" --voice chloe --stream --output output/audio/stream.wav
+python scripts/boson_tts.py --text "Hello" --model higgs-tts-3.1 --voice chloe --stream --output output/audio/stream.wav
 ```
 
 ### Preset voices
 
-| Voice | Style | Gender |
-|---|---|---|
-| `chloe` | Friendly, clear, engaging, American | Female |
-| `eleanor` | Calm, articulate, professional, educational | Female |
-| `jake` | Energetic, dramatic, passionate | Male |
-| `marcus` | Enthusiastic, confident, professorial | Male |
-| `nora` | Calm, clear, narrative | Female |
-| `oliver` | Calm, articulate, thoughtful, reflective | Male |
-| `default` | Platform default voice | — |
+The [official Voices page](https://docs.boson.ai/models/higgs-tts/voices.md#preset-voices) gives a selection, not a complete catalog:
+
+- **3.1 only**: `adam`, `alex`, `becky`, `celine`, `chloe`, `erik`, `jonah`, `lindsey`, `murdock`, `ruskin`.
+- **Sampled on the Voices page and compatible with both models**: `louis`, `zoe`.
+- **Still documented separately**: `jake` is used in the [official TTS overview](https://docs.boson.ai/models/higgs-tts/overview.md#use-a-preset-voice) but is not in the Voices page selection.
+- **Unconfirmed**: `eleanor`, `marcus`, `nora`, and `oliver` are not confirmed by the current public docs. Omission from the selection does not prove removal; use a documented voice for new integrations.
+- `default` is the platform's default voice alias, not a named preset.
 
 ### Inline tags (emotion / style / sfx / prosody)
 
@@ -118,12 +118,12 @@ Tags go **inside** the `--text` value. Lead with delivery tags; positional tags 
 # Emotion + sound effect
 python scripts/boson_tts.py \
   --text "<|emotion:enthusiasm|>Welcome to the show! <|sfx:laughter|>Haha, let's go!" \
-  --voice jake --output excited.mp3
+  --model higgs-tts-3.1 --voice jake --output excited.mp3
 
 # Speed control + pause
 python scripts/boson_tts.py \
   --text "<|prosody:speed_slow|>Let me explain slowly.<|prosody:pause|> One step at a time." \
-  --voice eleanor --output slow.mp3
+  --voice zoe --output slow.mp3
 ```
 
 Tag categories:
@@ -175,7 +175,7 @@ python scripts/boson_avatar_video.py \
 python scripts/boson_avatar_video.py \
   --ref-image face.jpg \
   --tts-text "Hello, I'm a digital avatar." \
-  --tts-voice chloe \
+  --tts-voice default \
   --output output/video/avatar.mp4
 ```
 
@@ -223,7 +223,7 @@ python -m unittest discover -s tests -v
 
 ## Languages
 
-Higgs TTS 3 auto-detects language from input text — **no language parameter needed**. Supports 102 languages including Chinese, English, Japanese, Korean, French, German, Spanish, Arabic, Hindi, Vietnamese, Thai, and more. For accents, use a reference clip with the target accent.
+Both models auto-detect language — **no language parameter needed**. See the [official language list](https://docs.boson.ai/models/higgs-tts/languages.md) for coverage by model. For accents, use a reference clip with the target accent.
 
 ## Details
 

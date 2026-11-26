@@ -1,4 +1,4 @@
-# Boson AI API Rules (snapshot 2026-07-15)
+# Boson AI API Rules
 
 > **官方文档**: https://docs.boson.ai/api-reference/
 > **OpenAPI Spec**: https://docs.boson.ai/openapi.json
@@ -16,8 +16,8 @@
 | 参数 | 类型 | 默认 | 说明 |
 |---|---|---|---|
 | `input` | string (必填) | — | 要合成的文本,可含 inline tags,最长 5000 字符 |
-| `model` | enum | `higgs-tts-3` | TTS 模型 ID |
-| `voice` | string | `default` | 预设音色名或自定义 voice ID;与 ref_audio/ref_text 互斥 |
+| `model` | enum | `higgs-tts-3` | 可选 `higgs-tts-3.1` 或 `higgs-tts-3` |
+| `voice` | string | `default` | 预设音色名或自定义 voice ID；与 ref_audio/ref_text 互斥。音色兼容性见 [SKILL.md](../SKILL.md#preset-voices) |
 | `response_format` | enum | `mp3` | `mp3`/`wav`/`pcm`/`opus`/`aac`/`flac`;流式必须是 `pcm` |
 | `stream` | boolean | `false` | 流式返回 PCM chunk |
 | `ref_audio` | string\|null | — | 一次性克隆:URL / data URI / base64;≤10MB |
